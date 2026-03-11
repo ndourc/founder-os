@@ -6,22 +6,11 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeou
 
 from config import openai_client, gemini_client, OPENAI_TIMEOUT_SEC, GEMINI_API_KEY
 
-EXTRACTION_PROMPT = """
-You are an expert at reading meeting notes. Extract the meeting details, actionable tasks, and the main project discussed.
-
-Return ONLY a valid JSON object matching this structure EXACTLY:
-{
-  "title": "Short descriptive meeting title",
-  "date": "YYYY-MM-DD",
-  "attendees": "Comma separated list of names",
-  "project_name": "Name of the overarching project (if any)",
-  "tasks": [
-    {"title": "Task title", "priority": "High/Medium/Low"}
-  ]
-}
-
-If no date is specified, use today's date or omit the date.
-Do NOT include any markdown, explanation, or extra text - only the JSON object.
+EXTRACTION_PROMPT = """Output JSON only. No markdown. No text.
+Keys: t(title), d(date), a(attendees), p(project), tasks[{t, o, pr:"High"|"Medium"|"Low"}], insights[].
+Input:
+{meeting_notes}
+Format: {"t":"","d":"","a":"","p":"","tasks":[],"insights":[]}
 """
 
 def _parse_json_meeting(raw: str) -> dict:
@@ -34,31 +23,85 @@ def _parse_json_meeting(raw: str) -> dict:
             return json.loads(match.group())
         raise ValueError(f"Could not parse valid JSON from model response:\n{raw}")
 
+def _map_to_standard_format(data: dict) -> dict:
+    """Map token-saving shortened JSON keys back to the standard expected format."""
+    # If the response somehow already has the long keys, return it.
+    if "title" in data and "t" not in data:
+        return data
+
+    attendees_raw = data.get("a", data.get("attendees", ""))
+    if isinstance(attendees_raw, list):
+        attendees_str = ", ".join(str(x) for x in attendees_raw)
+    else:
+        attendees_str = str(attendees_raw)
+
+    mapped = {
+        "title": data.get("t", data.get("title", "Untitled Meeting")),
+        "date": data.get("d", data.get("date", datetime.now().strftime("%Y-%m-%d"))),
+        "attendees": attendees_str,
+        "project_name": data.get("p", data.get("project_name", "General Project")),
+        "tasks": [],
+        "insights": []
+    }
+    
+    for task in data.get("tasks", []):
+        if isinstance(task, dict):
+            pr = task.get("pr", task.get("priority", "Medium"))
+            if not pr or not isinstance(pr, str):
+                pr = "Medium"
+            elif pr.lower() not in ["high", "medium", "low"]:
+                pr = "Medium"
+            else:
+                pr = pr.capitalize()
+
+            mapped["tasks"].append({
+                "title": task.get("t", task.get("title", "Untitled task")) or "Untitled task",
+                "priority": pr,
+                "owner": task.get("o", task.get("owner", "None")) or "None"
+            })
+    
+    for insight in data.get("insights", []):
+        if isinstance(insight, str):
+            words = insight.split()
+            title_str = " ".join(words[:6]) + ("..." if len(words) > 6 else "")
+            mapped["insights"].append({
+                "title": title_str,
+                "summary": insight,
+                "category": "Strategy",
+                "confidence": 4
+            })
+        elif isinstance(insight, dict):
+            mapped["insights"].append(insight)
+            
+    return mapped
+
 def _call_openai(meeting_notes: str) -> dict:
     """Call OpenAI synchronously (run inside a thread for timeout control)."""
+    prompt = EXTRACTION_PROMPT.replace("{meeting_notes}", meeting_notes)
     response = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": EXTRACTION_PROMPT},
-            {"role": "user",   "content": meeting_notes},
+            {"role": "user", "content": prompt}
         ],
         temperature=0.2,
     )
-    return _parse_json_meeting(response.choices[0].message.content.strip())
+    raw_dict = _parse_json_meeting(response.choices[0].message.content.strip())
+    return _map_to_standard_format(raw_dict)
 
 def _call_gemini(meeting_notes: str) -> dict:
     """Call Gemini as a fallback. Handles 429 by waiting the suggested retry
     delay (extracted from the error message) and retrying once."""
     from google.genai.errors import ClientError as GeminiClientError
 
-    prompt = EXTRACTION_PROMPT.strip() + "\n\nMeeting notes:\n" + meeting_notes
+    prompt = EXTRACTION_PROMPT.replace("{meeting_notes}", meeting_notes)
 
     def _do_call() -> dict:
         response = gemini_client.models.generate_content(
-            model="gemini-3.1-flash-lite-preview",
+            model="gemini-2.5-flash-lite",
             contents=prompt,
         )
-        return _parse_json_meeting(response.text.strip())
+        raw_dict = _parse_json_meeting(response.text.strip())
+        return _map_to_standard_format(raw_dict)
 
     try:
         return _do_call()
@@ -100,7 +143,8 @@ def _call_rule_based(meeting_notes: str) -> dict:
         "date": date_str,
         "attendees": attendees,
         "project_name": "General Project",
-        "tasks": tasks
+        "tasks": tasks,
+        "insights": [],
     }
 
 def extract_meeting_and_tasks(meeting_notes: str) -> dict:
@@ -137,5 +181,5 @@ def extract_meeting_and_tasks(meeting_notes: str) -> dict:
             print("provider: Rule-based ✔")
 
     print(f"Extracted Meeting: {result.get('title')}")
-    print(f"Extracted {len(result.get('tasks', []))} task(s)\n")
+    print(f"Extracted {len(result.get('tasks', []))} task(s), {len(result.get('insights', []))} insight(s)\n")
     return result

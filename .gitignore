@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+get_model_list.py

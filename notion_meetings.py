@@ -10,7 +10,7 @@ def create_notion_meeting(meeting_data: dict, full_notes: str) -> dict:
             "title": [{"text": {"content": meeting_data.get("title", "Untitled Meeting")}}]
         },
         "Full notes": {
-            "rich_text": [{"text": {"content": full_notes[:2000]}}] # Truncating (avoid limit)
+            "rich_text": [{"text": {"content": full_notes[:2000]}}]
         },
         "Attendees": {
             "rich_text": [{"text": {"content": meeting_data.get("attendees", "")}}]
