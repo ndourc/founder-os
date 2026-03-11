@@ -179,7 +179,6 @@ notion-hack/
 ├── notion_briefings.py      Generates and writes Founder Daily Briefing
 ├── analytics_engine.py      Computes per-project metrics, writes to Notion
 ├── task_similarity.py       Fuzzy deduplication before task creation
-├── get_model_list.py        Utility - lists available Gemini models
 └── requirements.txt         Python dependencies
 ```
 
