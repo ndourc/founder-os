@@ -1,0 +1,50 @@
+Product Roadmap Planning — Q2
+Date: 2026-03-14
+Project: Founder OS Platform
+Attendees: Henry, Mercy, Lindy, Uzah
+
+Summary
+The team met to discuss priorities for the upcoming product sprint and identify the most important features needed before opening the platform to more beta users. The conversation focused on improving the dashboard experience, making analytics more useful for founders, and preparing a stable demo environment.
+
+Discussion Notes
+
+Dashboard Experience
+Currently the Notion workspace contains the core data (tasks, meetings, projects, insights), but it lacks a strong visual overview. Maya suggested introducing visual charts to help founders quickly understand project health and task distribution. Leo proposed adding charts for task priority distribution and tasks per project.
+
+Analytics Improvements
+Daniel highlighted that founders need a simple way to see execution risk across projects. The analytics engine already calculates overdue tasks and completion rates, but this information should be surfaced more clearly in a dashboard view.
+
+Demo Readiness
+Since the hackathon demo will rely heavily on the system’s ability to automatically generate insights and tasks, the team agreed that the demo scenario must run reliably from a single command. Arjun suggested preparing a sample meeting input file that always produces a clear result for judges.
+
+User Experience
+The onboarding experience for new users currently requires manual configuration of several environment variables. The team discussed creating a clearer setup guide so that developers can run the system more easily.
+
+Action Items
+
+* Implement a task priority distribution chart for the dashboard
+  Priority: High
+
+* Create a visualization showing number of tasks per project
+  Priority: High
+
+* Improve project analytics display so risk levels are easier to understand
+  Priority: Medium
+
+* Prepare a stable demo meeting notes file for presentations
+  Priority: Medium
+
+* Update README documentation with clearer setup instructions
+  Priority: Low
+
+Strategic Insights
+
+* Founders benefit more from high-level operational visibility than raw task lists.
+
+* Visual dashboards significantly improve how quickly users understand project health.
+
+* Reliable demos are critical when presenting developer tools or infrastructure products.
+
+Next Steps
+
+The team will begin implementing dashboard visualizations and improve the analytics output before the next demo session.

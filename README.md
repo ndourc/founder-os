@@ -22,6 +22,7 @@ Founder OS acts like a lightweight **AI Chief Operating Officer**, ensuring that
 - [Configuration](#configuration)
 - [Running the Pipeline](#running-the-pipeline)
 - [AI Providers & Fallback Chain](#ai-providers--fallback-chain)
+- [Executive Dashboard](#executive-dashboard)
 - [Possible Integrations](#possible-integrations)
 - [Roadmap](#roadmap)
 
@@ -430,6 +431,41 @@ Generating 'Founder Briefing – 2026-03-11' …
 ```
 
 The briefing summary uses the same fallback chain independently from the extraction.
+
+---
+
+## Executive Dashboard
+
+Founder OS includes a **Notion Executive Dashboard** — a dedicated Notion page that acts as the visual control center for everything the pipeline writes.
+
+> **Founder OS — Executive Dashboard** _(link your own Notion dashboard page here)_
+
+The dashboard itself is a Notion page containing **Linked Database Views** of the five underlying databases that the pipeline populates. It does not require any code changes — once your pipeline is running, data automatically appears here.
+
+### What's on the Dashboard
+
+| View                  | Source Database      | What It Shows                                              |
+| --------------------- | -------------------- | ---------------------------------------------------------- |
+| **Projects Board**    | Projects DB          | All projects with risk levels, progress %, and task counts |
+| **Open Tasks**        | Tasks DB             | All incomplete tasks filterable by priority and project    |
+| **Founder Briefings** | Founder Briefings DB | Daily AI-generated executive summaries with KPIs           |
+| **Founder Memory**    | Founder Memory DB    | Strategic insights and decisions captured over time        |
+| **Meetings Log**      | Meetings DB          | All meeting records with attendees and linked tasks        |
+
+### Setting Up the Dashboard
+
+The pipeline populates the **databases**. The dashboard is a Notion page that displays views of those databases. To set it up:
+
+1. Open your Executive Dashboard page in Notion.
+2. Type `/linked view` and press `Enter`.
+3. Select one of your five databases (Projects, Tasks, Founder Briefings, Founder Memory, Meetings).
+4. Repeat for each database, applying filters and sorts to taste.
+
+Once embedded, every `python main.py` run will automatically surface new data across all views — no manual updates needed.
+
+### Why It's Separate from the Pipeline
+
+The Notion API does not support creating or modifying dashboard-style linked database view blocks programmatically. The pipeline writes directly to the underlying databases, and the dashboard is your visual layer on top. This separation means you have full control over how you want to visualise and filter the data.
 
 ---
 
